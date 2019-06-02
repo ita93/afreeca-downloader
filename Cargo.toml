@@ -9,3 +9,6 @@ url = "1.7.2"
 serde_urlencoded = "0.5.5"
 serde = { version = "1.0.92", features = ["derive"] }
 error-chain = "0.12.1"
+regex = "1.1.6"
+select = "0.4.2"
+reqwest = "0.9.17"
