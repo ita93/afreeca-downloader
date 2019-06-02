@@ -1,0 +1,11 @@
+[package]
+name = "afreeca-downloader"
+version = "0.1.0"
+authors = ["oni"]
+edition = "2018"
+
+[dependencies]
+url = "1.7.2"
+serde_urlencoded = "0.5.5"
+serde = { version = "1.0.92", features = ["derive"] }
+error-chain = "0.12.1"
