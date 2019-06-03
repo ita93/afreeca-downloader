@@ -5,6 +5,7 @@ use select::document::Document;
 use select::predicate::{Name, Attr};
 use crate::errors::*;
 use std::io::Read;
+use xml::reader::{XmlEvent, EventReader};
 
 //Fields: Ok([("http://vod.afreecatv.com/embed.php?isAfreeca", "false"), ("autoPlay", "true"), ("showChat", "true"), 
 //("szBjId", "afenglish"), ("nStationNo", "18027548"), ("nBbsNo", "59587689"), ("nTitleNo", "43597884"), 
@@ -54,26 +55,39 @@ impl VideoInfo{
     //Getting and parsing XML file.
 
     pub fn get_m3u8_url(&self) -> Result<String> {
-        let client = reqwest::Client::new();
-        let mut response_body = String::new();
+        let mut tag_name = String::new(); 
+        let mut is_m3u8 = false;
 
+        let client = reqwest::Client::new();
         let mut res = client.post(GET_VIDEO_INFO_URL).query(&self).send()?;
-        res.read_to_string(&mut response_body)?; //It should be a xml file.
-        let parser = xml::EventReader::from_str(&response_body);
+        let response_body = res.text_with_charset("utf-8")?;
+        let normalized_body = response_body.replace("\u{feff}", "");
+        let parser = EventReader::from_str(&normalized_body);
+        
         for e in parser {
             match e {
-                Ok(xml::XmlEvent::StartEvent{name, .. }) => {
-                    println!("Name: {}", name);
+                Ok(XmlEvent::StartElement{name, attributes, .. }) => {
+                    tag_name = name.to_string();
+                    if tag_name == "video" {
+                        is_m3u8 = attributes.iter().any(|attr| {
+                            attr.name.local_name == "duration".to_string()
+                        });
+                    }
                 },
-                Ok(xml::XmlEvent::EndEvent{name}) => {
-                    //ignore it
+                Ok(XmlEvent::Characters(text)) => {
+                    if tag_name == "video" && is_m3u8 {                        
+                        return Ok(text);
+                    }
                 },
                 Err(e) => {
-                    println!("Error : {}", e);
+                     return Err(Error::from(e));
+                },
+                _ => {
+                    //ignore them
                 }
             }
         }
-        Ok(String::new())
+        Err("XML parser: Unexpected Error".into())
     }
 }
 
