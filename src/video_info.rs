@@ -50,6 +50,31 @@ impl VideoInfo{
             Err("Input string is an invalid url".into())
         }
     }
+    
+    //Getting and parsing XML file.
+
+    pub fn get_m3u8_url(&self) -> Result<String> {
+        let client = reqwest::Client::new();
+        let mut response_body = String::new();
+
+        let mut res = client.post(GET_VIDEO_INFO_URL).query(&self).send()?;
+        res.read_to_string(&mut response_body)?; //It should be a xml file.
+        let parser = xml::EventReader::from_str(&response_body);
+        for e in parser {
+            match e {
+                Ok(xml::XmlEvent::StartEvent{name, .. }) => {
+                    println!("Name: {}", name);
+                },
+                Ok(xml::XmlEvent::EndEvent{name}) => {
+                    //ignore it
+                },
+                Err(e) => {
+                    println!("Error : {}", e);
+                }
+            }
+        }
+        Ok(String::new())
+    }
 }
 
 //video_url : view-source:http://vod.afreecatv.com/PLAYER/STATION/43597884
@@ -70,7 +95,3 @@ pub fn get_video_info_from_url(video_url: &str) -> Result<VideoInfo>{
     }
 }
 
-//video
-pub fn get_m3u8_url(video_url: &str) -> String {
-    
-}
