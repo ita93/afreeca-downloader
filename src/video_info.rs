@@ -4,6 +4,7 @@ use regex::Regex;
 use select::document::Document;
 use select::predicate::{Name, Attr};
 use crate::errors::*;
+use crate::ts_playlist::TsPlaylist;
 use std::io::Read;
 use xml::reader::{XmlEvent, EventReader};
 
@@ -54,7 +55,7 @@ impl VideoInfo{
     
     //Getting and parsing XML file.
 
-    pub fn get_m3u8_url(&self) -> Result<String> {
+    pub fn get_m3u8_url(&self) -> Result<TsPlaylist> {
         let mut tag_name = String::new(); 
         let mut is_m3u8 = false;
 
@@ -76,7 +77,7 @@ impl VideoInfo{
                 },
                 Ok(XmlEvent::Characters(text)) => {
                     if tag_name == "video" && is_m3u8 {                        
-                        return Ok(text);
+                        return TsPlaylist::parse(text);
                     }
                 },
                 Err(e) => {
