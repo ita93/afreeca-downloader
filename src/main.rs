@@ -28,7 +28,7 @@ use crate::errors::*;
 fn main() -> Result<()>{
     let res = video_info::get_video_info_from_url("http://vod.afreecatv.com/PLAYER/STATION/43597884")?;
     let m3u8_url = res.get_m3u8_url()?;
-    println!("{:?}", m3u8_url);
+    m3u8_url.download_to(res.get_video_name())?;
     Ok(())
 }
 

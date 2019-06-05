@@ -15,6 +15,8 @@ pub const GET_VIDEO_INFO_URL: &str = "http://afbbs.afreecatv.com:8080/api/video/
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VideoInfo{
+    #[serde(skip)]
+    video_name: String,
     #[serde(rename="isAfreeca")]
     is_afreeca: bool,
     #[serde(rename="autoPlay")]
@@ -40,13 +42,14 @@ pub struct VideoInfo{
 
 impl VideoInfo{
     //parse from full path url.
-    pub fn from_str(inp: &str) -> Result<VideoInfo>{
+    pub fn from_str(inp: &str, vid_name: String) -> Result<VideoInfo>{
         let formated_url = Url::parse(inp)?;
         if let Some(params) = formated_url.query() {
-            let parsed_params:VideoInfo = match serde_urlencoded::from_str(params){
+            let mut parsed_params:VideoInfo = match serde_urlencoded::from_str(params){
                 Ok(r) => r,
                 Err(ori_err) => return Err(Error::from(ori_err))
             };
+            parsed_params.video_name = vid_name; //move
             Ok(parsed_params)
         }else{
             Err("Input string is an invalid url".into())
@@ -90,6 +93,11 @@ impl VideoInfo{
         }
         Err("XML parser: Unexpected Error".into())
     }
+
+    //getters
+    pub fn get_video_name(&self) -> &str {
+        &self.video_name
+    }
 }
 
 //video_url : view-source:http://vod.afreecatv.com/PLAYER/STATION/43597884
@@ -99,9 +107,15 @@ pub fn get_video_info_from_url(video_url: &str) -> Result<VideoInfo>{
     res.read_to_string(&mut buf)?;
     let doc = Document::from(buf.as_str());    
     if let Some(head) = doc.find(Name("head")).nth(0){
+        //og:title
+        let video_name = match head.find(Attr("property", "og:title")).nth(0) {
+            Some(nd) => nd.attr("content").unwrap_or("UNKNOWN").to_string(),
+            None => String::new(),
+        };
+        //og::video
         if let Some(node) = head.find(Attr("property", "og:video")).nth(0) {
             let res = node.attr("content").unwrap(); //dont need to check this case
-            VideoInfo::from_str(&res)
+            VideoInfo::from_str(&res, video_name)
         } else {
             Err("Couldn't find video tag".into())
         }
