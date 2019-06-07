@@ -6,6 +6,7 @@ extern crate reqwest;
 extern crate xml;
 extern crate encoding_rs;
 extern crate m3u8_rs;
+extern crate clap;
 
 mod video_info;
 mod ts_playlist;
@@ -24,9 +25,26 @@ mod errors {
 }
 
 use crate::errors::*;
+use clap::{App, Arg};
+use regex::Regex;
 
 fn main() -> Result<()>{
-    let res = video_info::get_video_info_from_url("http://vod.afreecatv.com/PLAYER/STATION/43597884")?;
+    let reg = Regex::new("http://vod.afreecatv.com/PLAYER/STATION/.+").unwrap();
+    let matches = App::new("Afreeca Video Downloader")
+                    .version("0.1")
+                    .author("Phi Nguyen <phind.uet@gmail.com>")
+                    .about("A simple cli program to download video from Afreeca").
+                    arg(Arg::with_name("video_url")
+                        .help("Set the video url to download")
+                        .required(true)
+                        .index(1))
+                    .get_matches();
+    //let res = video_info::get_video_info_from_url("http://vod.afreecatv.com/PLAYER/STATION/43597884")?;
+    let video_url = matches.value_of("video_url").unwrap();
+    if !reg.is_match(video_url) {
+        return Err("This is not a valid Afreeca video url".into())            
+    }
+    let res = video_info::get_video_info_from_url(video_url)?;
     let m3u8_url = res.get_m3u8_url()?;
     m3u8_url.download_to(res.get_video_name())?;
     Ok(())

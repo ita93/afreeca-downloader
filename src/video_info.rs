@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 use url::Url;
-use regex::Regex;
 use select::document::Document;
 use select::predicate::{Name, Attr};
 use crate::errors::*;
