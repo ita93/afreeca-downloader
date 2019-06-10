@@ -6,5 +6,5 @@ Afreeca video downloader written in Rust.
 - [x] Downloading ts files from server.
 - [x] Joining ts files.
 - [ ] Convert result ts file to mp4.
-- [ ] Adding Progress bar.
+- [x] Adding Progress bar. (*Single progress bar, will be updated to multiple one when adding thread*).
 - [ ] Reducing download time using thread.

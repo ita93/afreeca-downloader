@@ -7,6 +7,7 @@ extern crate xml;
 extern crate encoding_rs;
 extern crate m3u8_rs;
 extern crate clap;
+extern crate pbr;
 
 mod video_info;
 mod ts_playlist;

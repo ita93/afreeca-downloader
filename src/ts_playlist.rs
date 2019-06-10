@@ -5,6 +5,7 @@ use url::Url;
 use m3u8_rs::playlist::Playlist;
 use std::io::Write;
 use std::fs::OpenOptions;
+use pbr::ProgressBar;
 
 #[derive(Debug)]
 pub struct TsPlaylist {
@@ -27,15 +28,21 @@ impl TsPlaylist {
     pub fn download_to(&self, file_name: &str) -> Result<()>{
         //let temp_dir = TempDir::new(".afree")?;
         let mut ts_output = OpenOptions::new().append(true).create(true).open(file_name)?;
+        let no_segments = self.playlist.len() as u64;
+        let mut pb = ProgressBar::new(no_segments);
+        pb.format("╢▌▌░╟");
+
         self.playlist.iter().for_each(|seg_name| {
             //Inside Lamda function
             let seg_url = format!("{}/{}", self.base_url, seg_name);
             let mut resp = reqwest::get(&seg_url).unwrap();
-            println!("Downloading segment: {}", seg_url);
+            //println!("Downloading segment: {}", seg_url);
             let mut downloaded_chunk : Vec<u8> = vec![];
             resp.copy_to(&mut downloaded_chunk);
             ts_output.write_all(&downloaded_chunk);
+            pb.inc();
         });
+        pb.finish_print("Done");
         Ok(())
     }
 }
