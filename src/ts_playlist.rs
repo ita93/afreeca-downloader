@@ -4,8 +4,10 @@ use reqwest;
 use url::Url;
 use m3u8_rs::playlist::Playlist;
 use std::io::Write;
+use std::process::{Command, Child};
 use std::fs::OpenOptions;
 use pbr::ProgressBar;
+use tempdir::TempDir;
 
 #[derive(Debug)]
 pub struct TsPlaylist {
@@ -26,8 +28,9 @@ impl TsPlaylist {
     }
     
     pub fn download_to(&self, file_name: &str) -> Result<()>{
-        //let temp_dir = TempDir::new(".afree")?;
-        let mut ts_output = OpenOptions::new().append(true).create(true).open(file_name)?;
+        let temp_dir = TempDir::new(".afree")?;
+        let file_path = temp_dir.path().join(file_name);
+        let mut ts_output = OpenOptions::new().append(true).create(true).open(&file_path)?;
         let no_segments = self.playlist.len() as u64;
         let mut pb = ProgressBar::new(no_segments);
         pb.format("╢▌▌░╟");
@@ -42,7 +45,11 @@ impl TsPlaylist {
             ts_output.write_all(&downloaded_chunk);
             pb.inc();
         });
-        pb.finish_print("Done");
+        pb.finish_print("Download done, waiting for converting....");
+        let output_mp4 = convert_ts_to_mp4(&file_path.to_str().unwrap(), file_name)?;
+        output_mp4.wait_with_output()?;
+        drop(ts_output);
+        temp_dir.close()?;
         Ok(())
     }
 }
@@ -67,4 +74,18 @@ fn m3u8_parser(input: &str) -> Vec<String>{
         Err(e) => println!("ERROR: {:?}", e),
     }
     return res;
+}
+
+pub fn convert_ts_to_mp4(input_file: &str, output_file: &str) -> Result<Child> {
+    let output_name = format!("{}.mp4", &output_file);
+    let output = Command::new("ffmpeg")
+                        .arg("-i")
+                        .arg(input_file)
+                        .arg("-c:v")
+                        .arg("libx264")
+                        .arg("-c:a")
+                        .arg("copy")
+                        .arg(output_name)
+                        .spawn();
+    Ok(output?)
 }

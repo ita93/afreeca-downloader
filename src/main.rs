@@ -8,6 +8,7 @@ extern crate encoding_rs;
 extern crate m3u8_rs;
 extern crate clap;
 extern crate pbr;
+extern crate tempdir;
 
 mod video_info;
 mod ts_playlist;
@@ -28,6 +29,7 @@ mod errors {
 use crate::errors::*;
 use clap::{App, Arg};
 use regex::Regex;
+use crate::ts_playlist::convert_ts_to_mp4;
 
 fn main() -> Result<()>{
     let reg = Regex::new("http://vod.afreecatv.com/PLAYER/STATION/.+").unwrap();
