@@ -85,6 +85,8 @@ pub fn convert_ts_to_mp4(input_file: &str, output_file: &str) -> Result<Child> {
                         .arg("libx264")
                         .arg("-c:a")
                         .arg("copy")
+                        .arg("-bsf:a")
+                        .arg("aac_adtstoasc")
                         .arg(output_name)
                         .spawn();
     Ok(output?)
